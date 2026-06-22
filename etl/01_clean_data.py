@@ -21,25 +21,31 @@ def process_taxi_data(input_file, output_file, log_file, lookup_file):
     df['tpep_pickup_datetime'] = pd.to_datetime(df['tpep_pickup_datetime'])
     df['tpep_dropoff_datetime'] = pd.to_datetime(df['tpep_dropoff_datetime'])
 
-    # Identify valid records
-    valid_conditions = (
-        (df['passenger_count'] > 0) &                            # Must have passengers
-        (df['trip_distance'] > 0) &                              # Must have traveled some distance
-        (df['fare_amount'] > 0) &                                # Fare must be positive
-        (df['tpep_dropoff_datetime'] > df['tpep_pickup_datetime']) # Dropoff must be AFTER pickup
-    )
+    # Tag and exclude bad records with specific reasons
+    excluded_parts = []
 
-    # Separate good data from bad data (to keep a log of exclusions)
-    clean_df = df[valid_conditions].copy()
-    excluded_df = df[~valid_conditions].copy()
-    
+    bad_passengers = df['passenger_count'] <= 0
+    excluded_parts.append(df[bad_passengers].assign(exclusion_reason='zero_or_negative_passengers'))
+
+    bad_distance = (~bad_passengers) & (df['trip_distance'] <= 0)
+    excluded_parts.append(df[bad_distance].assign(exclusion_reason='zero_or_negative_distance'))
+
+    bad_fare = (~bad_passengers) & (~bad_distance) & (df['fare_amount'] <= 0)
+    excluded_parts.append(df[bad_fare].assign(exclusion_reason='zero_or_negative_fare'))
+
+    bad_time = (~bad_passengers) & (~bad_distance) & (~bad_fare) & (df['tpep_dropoff_datetime'] <= df['tpep_pickup_datetime'])
+    excluded_parts.append(df[bad_time].assign(exclusion_reason='invalid_timestamps'))
+
+    all_bad = bad_passengers | bad_distance | bad_fare | bad_time
+    clean_df = df[~all_bad].copy()
+
     # Filter out illogical years (e.g., data from 2008 in a 2019 dataset)
     # The dataset is for Jan 2019, so keep late Dec 2018 and Jan 2019
     year_mask = clean_df['tpep_pickup_datetime'].dt.year.isin([2018, 2019])
-    excluded_df = pd.concat([excluded_df, clean_df[~year_mask]])
+    excluded_parts.append(clean_df[~year_mask].assign(exclusion_reason='invalid_year'))
     clean_df = clean_df[year_mask]
 
-    logging.info(f"Removed {len(excluded_df)} anomalous records.")
+    logging.info(f"Removed {sum(len(p) for p in excluded_parts)} anomalous records.")
 
     # 3. FEATURE ENGINEERING (3 Derived Features)
     logging.info("Engineering new features...")
@@ -50,10 +56,10 @@ def process_taxi_data(input_file, output_file, log_file, lookup_file):
     # Feature 2: Average Speed (mph)
     # Handle potential division by zero just in case, though we filtered out 0 duration above
     clean_df['avg_speed_mph'] = clean_df['trip_distance'] / (clean_df['duration_min'] / 60.0)
-    
+
     # Filter out impossible speeds (e.g., > 100 mph in NYC)
     speed_mask = clean_df['avg_speed_mph'] <= 100
-    excluded_df = pd.concat([excluded_df, clean_df[~speed_mask]])
+    excluded_parts.append(clean_df[~speed_mask].assign(exclusion_reason='impossible_speed'))
     clean_df = clean_df[speed_mask]
 
     # Feature 3: Tip Percentage
@@ -82,7 +88,7 @@ def process_taxi_data(input_file, output_file, log_file, lookup_file):
     
     # Ensure PU and DO locations exist in our shapefiles/lookup
     zone_mask = clean_df['PULocationID'].isin(valid_zones) & clean_df['DOLocationID'].isin(valid_zones)
-    excluded_df = pd.concat([excluded_df, clean_df[~zone_mask]])
+    excluded_parts.append(clean_df[~zone_mask].assign(exclusion_reason='invalid_zone'))
     clean_df = clean_df[zone_mask]
 
     # 5. SAVE OUTPUTS
@@ -90,12 +96,15 @@ def process_taxi_data(input_file, output_file, log_file, lookup_file):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-    # Save clean data
+    excluded_df = pd.concat(excluded_parts, ignore_index=True)
+
     clean_df.to_csv(output_file, index=False)
-    # Save excluded records to a log file
     excluded_df.to_csv(log_file, index=False)
 
     logging.info(f"ETL Complete. Final clean records: {len(clean_df)} (Dropped: {len(excluded_df)})")
+    logging.info("Exclusion breakdown:")
+    for reason, count in excluded_df['exclusion_reason'].value_counts().items():
+        logging.info(f"  {reason}: {count}")
 
 
 if _name_ == "_main_":
