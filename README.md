@@ -1,26 +1,58 @@
 # NYC Taxi Mobility Dashboard
 
-An enterprise-level full-stack web application designed to process, store, and visualize millions of real-world New York City taxi records to derive urban mobility insights. 
+A full-stack web application that processes, stores, and visualizes New York City taxi records for urban mobility insights.
 
 ## Features
-* **Custom ETL Pipeline:** Processes massive `.parquet`/`.csv` datasets, engineers spatial-temporal features, and filters physical/logical anomalies with a strict transparency logging system.
-* **Normalized Relational Database:** Utilizes a highly indexed MySQL star schema to handle rapid aggregate querying.
-* **Algorithmic Ranking:** Features a manually implemented Quicksort algorithm to dynamically rank borough hotspots by varying economic metrics.
-* **Interactive Frontend UI:** Built with HTML/CSS/Vanilla JS, featuring Chart.js analytics and Leaflet.js choropleth mapping.
 
-## Technology Stack
-* **Database:** MySQL
-* **Backend:** Python, Flask, `mysql-connector-python`
-* **Data Engineering:** Pandas, NumPy
-* **Frontend:** HTML5, CSS3, JavaScript, Chart.js, Leaflet.js
+- **ETL Pipeline:** Cleans raw taxi trip CSVs, engineers features (duration, speed, tip %, time-of-day), logs exclusions.
+- **MySQL Database:** Indexed star schema for fast aggregate queries.
+- **Custom Quicksort:** Ranks borough hotspots by economic metrics.
+- **Interactive Dashboard:** Chart.js analytics and Leaflet.js choropleth maps.
+
+## Tech Stack
+
+- Python 3.10+ Flask 
+- MySQL 8+ 
+- Pandas 
+-Chart.js 
+- Leaflet.js
 
 ## Demo
 
-[Watch the demo on Loom](https://www.loom.com/share/888c423385ba4a7094ef6efd08aa1ce4)
+[Watch on Loom](https://www.loom.com/share/888c423385ba4a7094ef6efd08aa1ce4)
 
-## How to Run Locally
+## Setup
 
-### 1. Database Setup
-Ensure MySQL is running, then execute the schema:
+**1. Install dependencies**
+```bash
+pip install pandas numpy
+pip install -r backend/requirements.txt
+```
+
+**2. Get the data**
+
+Download from [NYC TLC](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) and place in `data/raw/`:
+- `yellow_tripdata_2019-01.csv`
+- `taxi_zone_lookup.csv`
+
+**3. Set up MySQL**
 ```bash
 mysql -u root -p < database/schema.sql
+```
+```sql
+CREATE USER 'taxi_user'@'localhost' IDENTIFIED BY 'taxi_pass';
+GRANT ALL PRIVILEGES ON urban_mobility.* TO 'taxi_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+**4. Run ETL**
+```bash
+python etl/01_clean_data.py
+python etl/02_load_to_db.py
+```
+
+**5. Start the app**
+```bash
+python backend/app.py
+```
+Open [http://localhost:5000](http://localhost:5000).
