@@ -8,12 +8,12 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 # --- CONFIG: change these to match your MySQL setup ---
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'root',
-    'password': 'root/1234',
+    'user': 'taxi_user',
+    'password': 'taxi_pass',
     'database': 'urban_mobility'
 }
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(_file_)))
 ZONES_CSV   = os.path.join(BASE_DIR, 'data', 'raw', 'taxi_zone_lookup.csv')
 TRIPS_CSV   = os.path.join(BASE_DIR, 'data', 'processed', 'cleaned_trips.csv')
 EXCLUDED_CSV = os.path.join(BASE_DIR, 'data', 'logs', 'excluded_records.csv')
@@ -22,11 +22,14 @@ EXCLUDED_CSV = os.path.join(BASE_DIR, 'data', 'logs', 'excluded_records.csv')
 def load_zones(cursor, conn):
     logging.info("Loading zones...")
     df = pd.read_csv(ZONES_CSV)
+    df['Borough'] = df['Borough'].fillna('Outside NYC').replace('', 'Outside NYC')
     for _, row in df.iterrows():
+        vals = [None if pd.isna(v) else v for v in [row['LocationID'], row['Borough'], row['Zone'], row['service_zone']]]
+        vals[0] = int(vals[0])
         cursor.execute("""
             INSERT IGNORE INTO zones (location_id, borough, zone, service_zone)
             VALUES (%s, %s, %s, %s)
-        """, (int(row['LocationID']), row['Borough'], row['Zone'], row['service_zone']))
+        """, vals)
     conn.commit()
     logging.info(f"Inserted {len(df)} zones.")
 
@@ -69,7 +72,7 @@ def load_excluded(cursor, conn):
     logging.info(f"Inserted {len(df)} excluded records.")
 
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     conn = mysql.connector.connect(**DB_CONFIG)
     cursor = conn.cursor()
 

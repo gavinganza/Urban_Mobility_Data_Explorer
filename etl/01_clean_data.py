@@ -77,6 +77,7 @@ def process_taxi_data(input_file, output_file, log_file, lookup_file):
     # (Optional but good practice to verify LocationIDs exist in the dimension table)
     logging.info("Verifying zone lookups...")
     zones_df = pd.read_csv(lookup_file)
+    zones_df['Borough'] = zones_df['Borough'].fillna('Outside NYC').replace('', 'Outside NYC')
     valid_zones = zones_df['LocationID'].unique()
     
     # Ensure PU and DO locations exist in our shapefiles/lookup
@@ -97,13 +98,11 @@ def process_taxi_data(input_file, output_file, log_file, lookup_file):
     logging.info(f"ETL Complete. Final clean records: {len(clean_df)} (Dropped: {len(excluded_df)})")
 
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     # Define file paths based on the project structure
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(_file_)))
     
-    # Change these paths depending on what you are testing
-    INPUT_CSV = os.path.join(BASE_DIR, 'data', 'raw', 'sample_10k.csv') # TEST WITH THIS FIRST
-    # INPUT_CSV = os.path.join(BASE_DIR, 'data', 'raw', 'yellow_tripdata_2019-01.csv') # USE THIS FOR FINAL
+    INPUT_CSV = os.path.join(BASE_DIR, 'data', 'raw', 'yellow_tripdata_2019-01.csv')
     
     LOOKUP_CSV = os.path.join(BASE_DIR, 'data', 'raw', 'taxi_zone_lookup.csv')
     OUTPUT_CSV = os.path.join(BASE_DIR, 'data', 'processed', 'cleaned_trips.csv')
