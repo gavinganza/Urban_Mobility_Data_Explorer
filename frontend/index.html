@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Taxi Mobility Dashboard</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    /* Leaflet tooltip override */
+    .leaflet-tooltip { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+    .leaflet-popup-content-wrapper {
+      background: #0D1424;
+      border: 1px solid #1e2d4a;
+      border-radius: 10px;
+      color: #E8EDF5;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .leaflet-popup-tip { background: #0D1424; }
+    .leaflet-popup-close-button { color: #8892A4 !important; }
+  </style>
+</head>
+<body>
+
+<!-- ── Loading Overlay ── -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="loader">
+    <div class="loader-ring"></div>
+    <div class="loader-text">Loading NYC mobility data…</div>
+  </div>
+</div>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon"></span>
+    <h1>NYC Taxi<br>Dashboard</h1>
+    <p>Urban Mobility Analytics</p>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Analytics</div>
+
+    <button class="nav-item active" data-section="overview">
+      <span class="nav-icon"></span>
+      Overview
+    </button>
+    <button class="nav-item" data-section="trips">
+      <span class="nav-icon"></span>
+      Trip Explorer
+    </button>
+    <button class="nav-item" data-section="map">
+      <span class="nav-icon"></span>
+      Zone Map
+    </button>
+    <button class="nav-item" data-section="insights">
+      <span class="nav-icon"></span>
+      Insights
+    </button>
+
+    <div class="nav-section-label" style="margin-top:20px">System</div>
+
+    <button class="nav-item" data-section="quality">
+      <span class="nav-icon"></span>
+      Data Quality
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="data-badge">
+      <strong id="kpi-total-footer">—</strong>
+      NYC Taxi Trips · Jan 2019
+    </div>
+  </div>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- Top Bar -->
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+    <div class="topbar-title" id="topbar-title">Overview <span>NYC Yellow Taxi · January 2019</span></div>
+    <div class="filter-group" id="topbar-filters" style="display:none">
+      <!-- populated per section -->
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <div class="page-content">
+
+    <!-- ══ OVERVIEW ══════════════════════════════ -->
+    <section id="section-overview" class="section active">
+
+      <div class="eyebrow">January 2019 · New York City</div>
+      <div class="section-header" style="margin-bottom:20px">
+        <h2>Urban Mobility at a Glance</h2>
+        <p><span class="pulse"></span> Data pipeline complete</p>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-cyan">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Total Trips</div>
+          <div class="kpi-value" id="kpi-total-trips">—</div>
+          <div class="kpi-sub">Cleaned & validated</div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Avg Fare</div>
+          <div class="kpi-value" id="kpi-avg-fare">—</div>
+          <div class="kpi-sub">Excl. tips &amp; surcharges</div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Avg Distance</div>
+          <div class="kpi-value" id="kpi-avg-distance">—</div>
+          <div class="kpi-sub">Per trip</div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Avg Duration</div>
+          <div class="kpi-value" id="kpi-avg-duration">—</div>
+          <div class="kpi-sub">Door to door</div>
+        </div>
+        <div class="kpi-card kpi-cyan">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Avg Speed</div>
+          <div class="kpi-value" id="kpi-avg-speed">—</div>
+          <div class="kpi-sub">Derived feature</div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Avg Tip</div>
+          <div class="kpi-value" id="kpi-avg-tip">—</div>
+          <div class="kpi-sub">Of total amount</div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="card-grid cols-2 mb-24">
+        <!-- Hourly distribution -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Trips by Hour of Day</div>
+              <div class="card-subtitle">When does NYC move?</div>
+            </div>
+            <span class="card-badge badge-cyan">Hourly</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:200px">
+              <canvas id="chart-hourly"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Time of day donut -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Time-of-Day Segments</div>
+              <div class="card-subtitle">Derived feature from pickup time</div>
+            </div>
+            <span class="card-badge badge-amber">Segments</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:200px">
+              <canvas id="chart-tod"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="card-grid cols-2">
+        <!-- Borough breakdown -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Activity by Borough</div>
+              <div class="card-subtitle">Trips &amp; revenue breakdown</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="bar-list" id="borough-bars">
+              <!-- Injected by JS -->
+              <div class="empty-state"><p>Loading…</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment types -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Payment Method Distribution</div>
+              <div class="card-subtitle">Credit vs Cash vs other</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:220px">
+              <canvas id="chart-payment"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══ TRIPS EXPLORER ══════════════════════ -->
+    <section id="section-trips" class="section">
+
+      <div class="section-header">
+        <h2>Trip Explorer</h2>
+        <p>Filter, sort and browse individual trip records</p>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="card mb-16">
+        <div class="card-body" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+          <div>
+            <div class="kpi-label" style="margin-bottom:4px">Borough (Pickup)</div>
+            <select id="filter-borough">
+              <option value="">All Boroughs</option>
+              <option value="Manhattan">Manhattan</option>
+              <option value="Brooklyn">Brooklyn</option>
+              <option value="Queens">Queens</option>
+              <option value="Bronx">Bronx</option>
+              <option value="Staten Island">Staten Island</option>
+            </select>
+          </div>
+          <div>
+            <div class="kpi-label" style="margin-bottom:4px">Time of Day</div>
+            <select id="filter-tod">
+              <option value="">All Times</option>
+              <option value="Morning Rush">Morning Rush</option>
+              <option value="Midday">Midday</option>
+              <option value="Evening Rush">Evening Rush</option>
+              <option value="Late Night">Late Night</option>
+            </select>
+          </div>
+          <div>
+            <div class="kpi-label" style="margin-bottom:4px">Payment</div>
+            <select id="filter-payment">
+              <option value="">All Types</option>
+              <option value="1">Credit Card</option>
+              <option value="2">Cash</option>
+              <option value="3">No Charge</option>
+              <option value="4">Dispute</option>
+            </select>
+          </div>
+          <div>
+            <div class="kpi-label" style="margin-bottom:4px">Min Fare ($)</div>
+            <input type="number" id="filter-min-fare" placeholder="0" min="0" step="1" style="width:90px" />
+          </div>
+          <div>
+            <div class="kpi-label" style="margin-bottom:4px">Max Fare ($)</div>
+            <input type="number" id="filter-max-fare" placeholder="500" min="0" step="1" style="width:90px" />
+          </div>
+          <button class="btn btn-primary" id="apply-filters">Apply</button>
+          <button class="btn btn-ghost" id="reset-filters">Reset</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th data-sort="pickup_datetime">Pickup ↕</th>
+                <th>From</th>
+                <th>To</th>
+                <th data-sort="trip_distance">Distance ↕</th>
+                <th data-sort="duration_min">Duration ↕</th>
+                <th data-sort="fare_amount">Fare ↕</th>
+                <th data-sort="tip_amount">Tip ↕</th>
+                <th data-sort="total_amount">Total ↕</th>
+                <th>Payment</th>
+                <th>Segment</th>
+              </tr>
+            </thead>
+            <tbody id="trips-tbody">
+              <tr><td colspan="10">
+                <div class="empty-state"><p>Select filters and click Apply.</p></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span class="pagination-info" id="page-info">—</span>
+          <button class="page-btn" id="page-prev" disabled>← Prev</button>
+          <span class="page-btn active" id="page-label">Page 1</span>
+          <button class="page-btn" id="page-next">Next →</button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══ MAP ═══════════════════════════════════ -->
+    <section id="section-map" class="section">
+
+      <div class="section-header">
+        <h2>Zone Activity Map</h2>
+        <p>Choropleth showing pickup density across NYC taxi zones</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">NYC Taxi Zones — Pickup Heatmap</div>
+            <div class="card-subtitle">Colour intensity = trip volume. Hover for zone details.</div>
+          </div>
+          <span class="card-badge badge-cyan">Interactive</span>
+        </div>
+        <div id="map"></div>
+        <div class="map-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#00D4FF"></div> Manhattan</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div> Brooklyn</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div> Queens</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div> Bronx</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#EF4444"></div> Staten Island</div>
+          <div class="legend-item" style="margin-left:auto;color:var(--text-muted);font-size:10px">Darker = more trips</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══ INSIGHTS ════════════════════════════ -->
+    <section id="section-insights" class="section">
+
+      <div class="section-header">
+        <h2>Key Insights</h2>
+        <p>Three data-driven findings from NYC taxi patterns</p>
+      </div>
+
+      <!-- Insight Cards -->
+      <div class="insight-grid mb-24">
+
+        <div class="insight-card">
+          <div class="insight-number"></div>
+          <div class="insight-content">
+            <div class="insight-label">Speed & Congestion</div>
+            <div class="insight-headline">NYC slows down during rush hours — but not when you'd expect</div>
+            <div class="insight-desc">
+              Average taxi speed drops significantly during evening rush (4–8 PM), yet morning commute speeds often rival midday traffic. The radar chart below reveals how the city breathes through its 24-hour cycle.
+            </div>
+            <div class="insight-stat">
+              ~12 mph
+              <small>typical Manhattan evening rush speed</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-number"></div>
+          <div class="insight-content">
+            <div class="insight-label">Tipping Behaviour</div>
+            <div class="insight-headline">Credit card passengers tip ~18% — cash riders show $0 reported</div>
+            <div class="insight-desc">
+              A striking divide exists between payment methods: credit card trips record consistent tip percentages, while cash trips show near-zero tip amounts in the dataset — likely due to cash tips being unreported rather than absent.
+            </div>
+            <div class="insight-stat">
+              ~18%
+              <small>average credit card tip percentage</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-card">
+          <div class="insight-number"></div>
+          <div class="insight-content">
+            <div class="insight-label">Zone Concentration</div>
+            <div class="insight-headline">Top 10 zones generate the majority of all NYC taxi revenue</div>
+            <div class="insight-desc">
+              Trip demand is heavily concentrated in Midtown Manhattan zones (Times Square, Penn Station, Midtown East) and the two airports. This hyper-concentration shapes driver strategy, surge pricing, and city infrastructure decisions.
+            </div>
+            <div class="insight-stat">
+              Midtown + Airports
+              <small>dominant demand generators</small>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Insight Charts -->
+      <div class="card-grid cols-2 mb-24">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Average Speed by Time Segment</div>
+              <div class="card-subtitle">Insight 1 — derived from avg_speed_mph feature</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:260px">
+              <canvas id="chart-speed"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Avg Tip % by Group</div>
+              <div class="card-subtitle">Insight 2 — tip_percentage derived feature</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="height:260px">
+              <canvas id="chart-tips"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Top 10 Zones — Trips &amp; Revenue</div>
+            <div class="card-subtitle">Insight 3 — ranked by custom Quicksort algorithm</div>
+          </div>
+          <span class="card-badge badge-amber">Custom Algorithm</span>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap" style="height:280px">
+            <canvas id="chart-top-zones"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ══ DATA QUALITY ════════════════════════ -->
+    <section id="section-quality" class="section">
+
+      <div class="section-header">
+        <h2>Data Quality Report</h2>
+        <p>ETL pipeline exclusion log &amp; integrity metrics</p>
+      </div>
+
+      <!-- Quality KPIs -->
+      <div class="kpi-grid mb-24">
+        <div class="kpi-card kpi-cyan">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Total Raw Records</div>
+          <div class="kpi-value" id="dq-total">—</div>
+          <div class="kpi-sub">Before cleaning</div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Clean Records</div>
+          <div class="kpi-value" id="dq-clean">—</div>
+          <div class="kpi-sub">Loaded to database</div>
+        </div>
+        <div class="kpi-card" style="border-color:#1e2d4a">
+          <span class="kpi-icon" style="top:16px;right:16px;position:absolute;font-size:20px;opacity:0.3">⚠️</span>
+          <div class="kpi-label">Excluded Records</div>
+          <div class="kpi-value" style="color:var(--red)" id="dq-excluded">—</div>
+          <div class="kpi-sub">Anomalies &amp; duplicates</div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <span class="kpi-icon"></span>
+          <div class="kpi-label">Data Quality Score</div>
+          <div class="kpi-value" id="dq-pct">—</div>
+          <div class="kpi-sub">% records retained</div>
+        </div>
+      </div>
+
+      <div class="card-grid cols-2 mb-24">
+        <!-- Doughnut -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Clean vs Excluded</div>
+          </div>
+          <div class="card-body" style="display:flex;justify-content:center">
+            <div style="max-width:280px;width:100%">
+              <canvas id="chart-dq"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Exclusion reasons text summary -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Why Records Were Excluded</div>
+            <div class="card-subtitle">ETL pipeline cleaning rules</div>
+          </div>
+          <div class="card-body">
+            <div class="bar-list">
+              <div class="bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Zero or negative distance</span>
+                  <span class="bar-val anomaly-tag">trip_distance ≤ 0</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill" data-width="75" style="background:var(--red)"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Zero passenger count</span>
+                  <span class="bar-val anomaly-tag">passenger_count ≤ 0</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill" data-width="50" style="background:var(--red)"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Negative or zero fare</span>
+                  <span class="bar-val anomaly-tag">fare_amount ≤ 0</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill" data-width="40" style="background:var(--amber)"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Invalid timestamps</span>
+                  <span class="bar-val anomaly-tag">dropoff ≤ pickup</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill" data-width="25" style="background:var(--amber)"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Impossible speed (&gt;100 mph)</span>
+                  <span class="bar-val anomaly-tag">avg_speed &gt; 100</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill" data-width="15" style="background:var(--purple)"></div></div>
+              </div>
+              <div class="bar-item">
+                <div class="bar-meta">
+                  <span class="bar-name">Invalid year (not 2018–2019)</span>
+                  <span class="bar-val anomaly-tag">year filter</span>
+                </div>
+                <div class="bar-track"><div class="bar-fill" data-width="8" style="background:var(--purple)"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Excluded samples table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Sample Excluded Records</div>
+            <div class="card-subtitle">First 20 flagged entries from excluded_records log</div>
+          </div>
+          <span class="card-badge" style="background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.2)">Anomalies</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Pickup Time</th>
+                <th>Distance</th>
+                <th>Fare</th>
+                <th>Passengers</th>
+                <th>Total</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="excluded-tbody">
+              <tr><td colspan="6"><div class="empty-state"><p>Loading excluded records…</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </div><!-- /page-content -->
+</main>
+
+<!-- Toast container -->
+<div id="toast-container" class="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/map.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+  // Animate quality bars when that section loads
+  const qualityObserver = new MutationObserver(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.querySelectorAll('#section-quality .bar-fill').forEach(el => {
+          el.style.width = (el.dataset.width || 0) + '%';
+        });
+      });
+    });
+  });
+  const qSec = document.getElementById('section-quality');
+  if (qSec) qualityObserver.observe(qSec, { attributeFilter: ['class'] });
+</script>
+
+</body>
+</html>
