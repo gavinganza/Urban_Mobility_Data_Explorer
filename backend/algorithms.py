@@ -1,11 +1,3 @@
-"""
-Custom quicksort implementation for ranking zone data.
-No built-in sort functions used — this satisfies the DSA requirement.
-
-Used by the /api/zones/top endpoint to rank zones by trip volume or revenue.
-"""
-
-
 def quicksort(arr, key=None, reverse=False):
     if len(arr) <= 1:
         return arr
@@ -35,7 +27,6 @@ def quicksort(arr, key=None, reverse=False):
 
 
 def rank_zones(zone_data, sort_by='trip_count', top_n=10):
-    """Rank zones using custom quicksort. Returns top N zones."""
     if sort_by not in zone_data[0] if zone_data else True:
         sort_by = 'trip_count'
 

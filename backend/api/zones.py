@@ -51,7 +51,7 @@ def top():
 
 @zones_bp.route('/api/zones/geojson')
 def geojson():
-    geojson_path = os.path.join(DATA_DIR, 'taxi_zones.geojson')
+    geojson_path = os.path.join(DATA_DIR, 'raw', 'taxi_zones.geojson')
     with open(geojson_path) as f:
         data = json.load(f)
     return jsonify(data)

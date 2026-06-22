@@ -13,8 +13,11 @@ def get_trips():
     time_of_day = request.args.get('time_of_day')
     date_from = request.args.get('date_from')
     date_to = request.args.get('date_to')
+    payment_type = request.args.get('payment_type')
+    min_fare = request.args.get('min_fare')
+    max_fare = request.args.get('max_fare')
     sort_by = request.args.get('sort_by', 'pickup_datetime')
-    order = request.args.get('order', 'desc')
+    sort_dir = request.args.get('sort_dir', 'DESC').upper()
 
     allowed_sorts = {
         'pickup_datetime', 'trip_distance', 'fare_amount',
@@ -22,8 +25,8 @@ def get_trips():
     }
     if sort_by not in allowed_sorts:
         sort_by = 'pickup_datetime'
-    if order not in ('asc', 'desc'):
-        order = 'desc'
+    if sort_dir not in ('ASC', 'DESC'):
+        sort_dir = 'DESC'
 
     conditions = []
     params = []
@@ -34,6 +37,15 @@ def get_trips():
     if time_of_day:
         conditions.append('t.time_of_day = %s')
         params.append(time_of_day)
+    if payment_type:
+        conditions.append('t.payment_type = %s')
+        params.append(payment_type)
+    if min_fare:
+        conditions.append('t.fare_amount >= %s')
+        params.append(float(min_fare))
+    if max_fare:
+        conditions.append('t.fare_amount <= %s')
+        params.append(float(max_fare))
     if date_from:
         conditions.append('t.pickup_datetime >= %s')
         params.append(date_from)
@@ -61,7 +73,7 @@ def get_trips():
         FROM trips t
         JOIN zones z ON t.pu_location_id = z.location_id
         {where}
-        ORDER BY t.{sort_by} {order}
+        ORDER BY t.{sort_by} {sort_dir}
         LIMIT %s OFFSET %s
     """
     params.extend([per_page, offset])

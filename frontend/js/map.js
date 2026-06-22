@@ -1,14 +1,9 @@
-/**
- * map.js — Leaflet map with NYC taxi zone heatmap overlay
- * Uses zone pickup/dropoff volumes to colour-code borough polygons
- */
-
 const MapModule = (() => {
   let map = null;
   let geojsonLayer = null;
   let markerLayer = null;
 
-  // Borough colour palette (matching dashboard theme)
+
   const BOROUGH_COLORS = {
     'Manhattan':    '#00D4FF',
     'Brooklyn':     '#F59E0B',
@@ -40,7 +35,7 @@ const MapModule = (() => {
       zoomControl: false,
     });
 
-    // Dark tile layer
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap © CARTO',
       maxZoom: 18,
@@ -53,16 +48,12 @@ const MapModule = (() => {
     return map;
   }
 
-  /**
-   * Render zone polygons from GeoJSON, coloured by borough.
-   * zoneStats: optional { locationId: { trips, revenue } } for intensity shading
-   */
   async function renderZones(zoneStats = {}) {
     if (!map) return;
 
     try {
-      // Fetch the GeoJSON from backend (served as static file or from API)
-      const resp = await fetch('/data/raw/taxi_zones.geojson').catch(() => null);
+
+      const resp = await fetch('/api/zones/geojson').catch(() => null);
       if (!resp || !resp.ok) {
         console.warn('GeoJSON not accessible – showing borough markers instead');
         renderBoroughMarkers();
@@ -79,6 +70,7 @@ const MapModule = (() => {
           const borough = props.borough || props.Borough || 'Unknown';
           const locId   = props.location_id || props.LocationID;
           const stat    = zoneStats[locId] || {};
+          // Higher trip count = more opaque fill (capped at 5000 trips)
           const intensity = stat.trips ? Math.min(stat.trips / 5000, 1) : 0.15;
 
           const color = getColor(borough);
@@ -101,8 +93,8 @@ const MapModule = (() => {
             <div style="font-family:'Inter',sans-serif;font-size:12px;line-height:1.5;color:#e8edf5;background:#0d1424;border:1px solid #1e2d4a;padding:10px 12px;border-radius:8px;min-width:160px">
               <div style="font-weight:600;margin-bottom:4px">${zone}</div>
               <div style="color:#8892a4;font-size:11px">${borough}</div>
-              ${stat.trips ? `<div style="margin-top:6px;color:#00D4FF;font-size:11px">🚕 ${stat.trips.toLocaleString()} trips</div>` : ''}
-              ${stat.revenue ? `<div style="color:#F59E0B;font-size:11px">💰 $${stat.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>` : ''}
+              ${stat.trips ? `<div style="margin-top:6px;color:#00D4FF;font-size:11px">${stat.trips.toLocaleString()} trips</div>` : ''}
+              ${stat.revenue ? `<div style="color:#F59E0B;font-size:11px">$${stat.revenue.toLocaleString(undefined,{maximumFractionDigits:0})}</div>` : ''}
             </div>
           `, { sticky: true, className: 'map-tooltip' });
 
@@ -119,7 +111,8 @@ const MapModule = (() => {
     }
   }
 
-  /** Fallback: plot borough centre markers if GeoJSON isn't served */
+
+  // Fallback when GeoJSON fails to load
   function renderBoroughMarkers() {
     const boroughs = [
       { name: 'Manhattan',     lat: 40.7831, lng: -73.9712, trips: 0 },
@@ -144,7 +137,7 @@ const MapModule = (() => {
     });
   }
 
-  /** Plot top pickup/dropoff locations as circle markers */
+
   function plotHotspots(hotspots) {
     if (!map || !markerLayer) return;
     markerLayer.clearLayers();
@@ -166,7 +159,7 @@ const MapModule = (() => {
           <div style="font-family:'Inter',sans-serif;font-size:12px">
             <b>${h.zone}</b><br>
             <span style="color:#8892a4">${h.borough}</span><br>
-            🚕 ${h.trips.toLocaleString()} trips
+            ${h.trips.toLocaleString()} trips
           </div>
         `)
         .addTo(markerLayer);

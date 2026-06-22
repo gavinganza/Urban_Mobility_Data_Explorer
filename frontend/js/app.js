@@ -1,12 +1,8 @@
-/**
- * app.js — NYC Taxi Mobility Dashboard
- * Connects to Flask backend at /api/*
- * Sections: Overview, Trips Explorer, Map, Insights, Data Quality
- */
+// Connects to Flask backend at /api/*
 
-const API = 'http://localhost:5000';
+const API = '';
 
-/* ── Utility ────────────────────────────────── */
+// Utility
 const $  = id => document.getElementById(id);
 const $$ = sel => document.querySelectorAll(sel);
 
@@ -26,17 +22,7 @@ function fmtTime(str) {
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-function showToast(msg, icon = 'ℹ️') {
-  const container = $('toast-container');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
-  container.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
-}
-
-/* ── API helpers ─────────────────────────────── */
+// API helpers
 async function apiFetch(path, fallback = null) {
   try {
     const res = await fetch(API + path);
@@ -48,7 +34,7 @@ async function apiFetch(path, fallback = null) {
   }
 }
 
-/* ── Chart.js global defaults ────────────────── */
+// Chart.js defaults
 Chart.defaults.color = '#8892A4';
 Chart.defaults.borderColor = '#1e2d4a';
 Chart.defaults.font.family = "'Inter', sans-serif";
@@ -62,7 +48,7 @@ const COLORS = {
   red:    '#EF4444',
 };
 
-/* ── State ───────────────────────────────────── */
+// State
 const state = {
   currentSection: 'overview',
   filters: {
@@ -84,9 +70,7 @@ const state = {
   stats: null,
 };
 
-/* ══════════════════════════════════════════════
-   NAVIGATION
-══════════════════════════════════════════════ */
+// NAVIGATION
 function initNav() {
   $$('.nav-item[data-section]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -137,9 +121,7 @@ function navigateTo(section) {
   if (section === 'quality') loadQualitySection();
 }
 
-/* ══════════════════════════════════════════════
-   OVERVIEW — KPI + Charts
-══════════════════════════════════════════════ */
+// OVERVIEW
 async function loadOverview() {
   // 1. Stats summary
   const stats = await apiFetch('/api/stats/summary', null);
@@ -159,7 +141,7 @@ async function loadOverview() {
   renderHourlyChart(hourly);
 
   // 5. Payment types
-  const payments = await apiFetch('/api/stats/payment_types', null);
+  const payments = await apiFetch('/api/stats/payments', null);
   renderPaymentChart(payments);
 }
 
@@ -174,6 +156,7 @@ function renderKPIs(stats) {
 
   const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
   set('kpi-total-trips',   fmt(stats.total_trips));
+  set('kpi-total-footer',  fmt(stats.total_trips));
   set('kpi-avg-fare',      fmtDollar(stats.avg_fare));
   set('kpi-avg-distance',  stats.avg_distance != null ? fmt(stats.avg_distance, 1) + ' mi' : '—');
   set('kpi-avg-duration',  stats.avg_duration != null ? fmt(stats.avg_duration, 1) + ' min' : '—');
@@ -331,33 +314,26 @@ function renderPaymentChart(data) {
   const values = rows.map(r => r.trip_count);
 
   state.charts.payment = new Chart(canvas, {
-    type: 'bar',
+    type: 'pie',
     data: {
       labels,
       datasets: [{
-        label: 'Trips',
         data: values,
-        backgroundColor: [COLORS.cyan, COLORS.amber, COLORS.green, COLORS.red, COLORS.purple, '#6B7280'].map(c => c + '55'),
-        borderColor:     [COLORS.cyan, COLORS.amber, COLORS.green, COLORS.red, COLORS.purple, '#6B7280'],
+        backgroundColor: [COLORS.cyan, COLORS.amber, COLORS.green, COLORS.red, COLORS.purple, '#6B7280'],
+        borderColor: '#0D1424',
         borderWidth: 2,
-        borderRadius: 4,
       }],
     },
     options: {
-      indexAxis: 'y',
       responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { color: '#1e2d4a' }, ticks: { callback: v => fmt(v) } },
-        y: { grid: { display: false } },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#8892A4', padding: 16 } },
       },
     },
   });
 }
 
-/* ══════════════════════════════════════════════
-   TRIPS EXPLORER — filterable table
-══════════════════════════════════════════════ */
+// TRIPS EXPLORER
 async function loadTripsTable() {
   const params = buildQueryParams();
   const data   = await apiFetch(`/api/trips?${params}`, { trips: [], total: 0 });
@@ -400,7 +376,7 @@ function renderTripsTable() {
   if (!state.trips.data.length) {
     tbody.innerHTML = `<tr><td colspan="10">
       <div class="empty-state">
-        <div class="empty-icon">🚕</div>
+        <div class="empty-icon"></div>
         <p>No trips found for current filters.</p>
       </div>
     </td></tr>`;
@@ -451,7 +427,7 @@ function initTripFilters() {
       state.filters.maxFare      = $('filter-max-fare')?.value     || '';
       state.trips.page = 1;
       loadTripsTable();
-      showToast('Filters applied', '🔍');
+
     });
   }
 
@@ -489,9 +465,7 @@ function initTripFilters() {
   });
 }
 
-/* ══════════════════════════════════════════════
-   MAP SECTION
-══════════════════════════════════════════════ */
+// MAP
 async function loadMapSection() {
   // Init map if needed
   if (!MapModule.getMap()) {
@@ -499,7 +473,7 @@ async function loadMapSection() {
   }
 
   // Get zone stats to colour the choropleth
-  const zoneData = await apiFetch('/api/zones/top?sort_by=trip_count&top_n=265', []);
+  const zoneData = await apiFetch('/api/zones/top?metric=trip_count&n=265', []);
   const zoneStats = {};
   if (zoneData) {
     zoneData.forEach(z => {
@@ -510,7 +484,7 @@ async function loadMapSection() {
   MapModule.renderZones(zoneStats);
 
   // Plot top hotspot markers
-  const hotspots = await apiFetch('/api/zones/top?sort_by=trip_count&top_n=20', []);
+  const hotspots = await apiFetch('/api/zones/top?metric=trip_count&n=20', []);
   if (hotspots && hotspots.length) {
     // Some backend responses may include lat/lng; if not, skip markers
     const withCoords = hotspots.filter(h => h.lat && h.lng);
@@ -518,20 +492,18 @@ async function loadMapSection() {
   }
 }
 
-/* ══════════════════════════════════════════════
-   INSIGHTS SECTION
-══════════════════════════════════════════════ */
+// INSIGHTS
 async function loadInsights() {
   // Insight 1: Speed by time of day
-  const speedData = await apiFetch('/api/insights/speed_by_time', null);
+  const speedData = await apiFetch('/api/insights/speed', null);
   renderSpeedInsightChart(speedData);
 
   // Insight 2: Tip behaviour
-  const tipData = await apiFetch('/api/insights/tips', null);
+  const tipData = await apiFetch('/api/insights/tipping', null);
   renderTipInsightChart(tipData);
 
   // Insight 3: Top zones
-  const topZones = await apiFetch('/api/zones/top?sort_by=trip_count&top_n=10', []);
+  const topZones = await apiFetch('/api/zones/top?metric=trip_count&n=10', []);
   renderTopZonesChart(topZones);
 }
 
@@ -662,9 +634,7 @@ function renderTopZonesChart(data) {
   });
 }
 
-/* ══════════════════════════════════════════════
-   DATA QUALITY SECTION
-══════════════════════════════════════════════ */
+// DATA QUALITY
 async function loadQualitySection() {
   const data = await apiFetch('/api/stats/data_quality', null);
   renderQualityCards(data);
@@ -722,7 +692,7 @@ async function renderExcludedTable() {
 
   const data = await apiFetch('/api/stats/excluded?limit=20', []);
   if (!data || !data.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">✅</div><p>No exclusion data available.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><p>No exclusion data available.</p></div></td></tr>`;
     return;
   }
 
@@ -733,18 +703,15 @@ async function renderExcludedTable() {
       <td>${fmtDollar(r.fare_amount)}</td>
       <td>${fmt(r.passenger_count)}</td>
       <td>${fmtDollar(r.total_amount)}</td>
-      <td><span class="anomaly-tag">⚠️ ${r.exclusion_reason || 'flagged'}</span></td>
+      <td><span class="anomaly-tag">${r.exclusion_reason || 'flagged'}</span></td>
     </tr>
   `).join('');
 }
 
-/* ══════════════════════════════════════════════
-   INIT
-══════════════════════════════════════════════ */
+// INIT
 document.addEventListener('DOMContentLoaded', async () => {
-  // Hide loader
   const loader = $('loading-overlay');
-  setTimeout(() => { if (loader) loader.classList.add('hide'); }, 1400);
+  if (loader) loader.remove();
 
   initNav();
   initTripFilters();
@@ -754,5 +721,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadOverview();
 
   // Show live pulse
-  showToast('Dashboard connected · NYC Jan 2019', '🟢');
+
 });

@@ -31,18 +31,12 @@
 </head>
 <body>
 
-<!-- ── Loading Overlay ── -->
-<div id="loading-overlay" class="loading-overlay">
-  <div class="loader">
-    <div class="loader-ring"></div>
-    <div class="loader-text">Loading NYC mobility data…</div>
-  </div>
-</div>
+
 
 <!-- ── Sidebar ── -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <span class="logo-icon">🚕</span>
+
     <h1>NYC Taxi<br>Dashboard</h1>
     <p>Urban Mobility Analytics</p>
   </div>
@@ -51,26 +45,26 @@
     <div class="nav-section-label">Analytics</div>
 
     <button class="nav-item active" data-section="overview">
-      <span class="nav-icon">📊</span>
+
       Overview
     </button>
     <button class="nav-item" data-section="trips">
-      <span class="nav-icon">📋</span>
+
       Trip Explorer
     </button>
     <button class="nav-item" data-section="map">
-      <span class="nav-icon">🗺️</span>
+
       Zone Map
     </button>
     <button class="nav-item" data-section="insights">
-      <span class="nav-icon">💡</span>
+
       Insights
     </button>
 
     <div class="nav-section-label" style="margin-top:20px">System</div>
 
     <button class="nav-item" data-section="quality">
-      <span class="nav-icon">🔬</span>
+
       Data Quality
     </button>
   </nav>
@@ -78,7 +72,7 @@
   <div class="sidebar-footer">
     <div class="data-badge">
       <strong id="kpi-total-footer">—</strong>
-      NYC Taxi Trips · Jan 2019
+      NYC Taxi Trips · Since Jan 2019
     </div>
   </div>
 </aside>
@@ -88,7 +82,7 @@
 
   <!-- Top Bar -->
   <header class="topbar">
-    <button class="hamburger" id="hamburger" aria-label="Menu">☰</button>
+    <button class="hamburger" id="hamburger" aria-label="Menu">Menu</button>
     <div class="topbar-title" id="topbar-title">Overview <span>NYC Yellow Taxi · January 2019</span></div>
     <div class="filter-group" id="topbar-filters" style="display:none">
       <!-- populated per section -->
@@ -104,43 +98,43 @@
       <div class="eyebrow">January 2019 · New York City</div>
       <div class="section-header" style="margin-bottom:20px">
         <h2>Urban Mobility at a Glance</h2>
-        <p><span class="pulse"></span> Data pipeline complete</p>
+        <p>Data pipeline complete</p>
       </div>
 
       <!-- KPI Row -->
       <div class="kpi-grid">
         <div class="kpi-card kpi-cyan">
-          <span class="kpi-icon">🚕</span>
+
           <div class="kpi-label">Total Trips</div>
           <div class="kpi-value" id="kpi-total-trips">—</div>
           <div class="kpi-sub">Cleaned & validated</div>
         </div>
         <div class="kpi-card kpi-amber">
-          <span class="kpi-icon">💵</span>
+
           <div class="kpi-label">Avg Fare</div>
           <div class="kpi-value" id="kpi-avg-fare">—</div>
           <div class="kpi-sub">Excl. tips &amp; surcharges</div>
         </div>
         <div class="kpi-card kpi-green">
-          <span class="kpi-icon">📍</span>
+
           <div class="kpi-label">Avg Distance</div>
           <div class="kpi-value" id="kpi-avg-distance">—</div>
           <div class="kpi-sub">Per trip</div>
         </div>
         <div class="kpi-card kpi-purple">
-          <span class="kpi-icon">⏱️</span>
+
           <div class="kpi-label">Avg Duration</div>
           <div class="kpi-value" id="kpi-avg-duration">—</div>
           <div class="kpi-sub">Door to door</div>
         </div>
         <div class="kpi-card kpi-cyan">
-          <span class="kpi-icon">🏎️</span>
+
           <div class="kpi-label">Avg Speed</div>
           <div class="kpi-value" id="kpi-avg-speed">—</div>
           <div class="kpi-sub">Derived feature</div>
         </div>
         <div class="kpi-card kpi-amber">
-          <span class="kpi-icon">💰</span>
+
           <div class="kpi-label">Avg Tip</div>
           <div class="kpi-value" id="kpi-avg-tip">—</div>
           <div class="kpi-sub">Of total amount</div>
@@ -352,9 +346,9 @@
           <div class="insight-number"></div>
           <div class="insight-content">
             <div class="insight-label">Speed & Congestion</div>
-            <div class="insight-headline">NYC slows down during rush hours — but not when you'd expect</div>
+            <div class="insight-headline">NYC slows down during rush hours</div>
             <div class="insight-desc">
-              Average taxi speed drops significantly during evening rush (4–8 PM), yet morning commute speeds often rival midday traffic. The radar chart below reveals how the city breathes through its 24-hour cycle.
+              Average taxi speed drops significantly during evening rush (4–8 PM), yet morning commute speeds are often similar to midday traffic. The radar chart below reveals the city's 24-hour cycle.
             </div>
             <div class="insight-stat">
               ~12 mph
@@ -367,9 +361,9 @@
           <div class="insight-number"></div>
           <div class="insight-content">
             <div class="insight-label">Tipping Behaviour</div>
-            <div class="insight-headline">Credit card passengers tip ~18% — cash riders show $0 reported</div>
+            <div class="insight-headline">Credit card passengers tip ~18%.</div>
             <div class="insight-desc">
-              A striking divide exists between payment methods: credit card trips record consistent tip percentages, while cash trips show near-zero tip amounts in the dataset — likely due to cash tips being unreported rather than absent.
+              A significant difference exists between payment methods: credit card trips record consistent tip percentages, while cash trips show near-zero tip amounts in the dataset. This is likely due to cash tips being unreported by drivers rather than absent of tips.
             </div>
             <div class="insight-stat">
               ~18%
@@ -382,7 +376,7 @@
           <div class="insight-number"></div>
           <div class="insight-content">
             <div class="insight-label">Zone Concentration</div>
-            <div class="insight-headline">Top 10 zones generate the majority of all NYC taxi revenue</div>
+            <div class="insight-headline">Top 10 zones generate the majority of all taxi revenue</div>
             <div class="insight-desc">
               Trip demand is heavily concentrated in Midtown Manhattan zones (Times Square, Penn Station, Midtown East) and the two airports. This hyper-concentration shapes driver strategy, surge pricing, and city infrastructure decisions.
             </div>
@@ -454,25 +448,25 @@
       <!-- Quality KPIs -->
       <div class="kpi-grid mb-24">
         <div class="kpi-card kpi-cyan">
-          <span class="kpi-icon">📦</span>
+
           <div class="kpi-label">Total Raw Records</div>
           <div class="kpi-value" id="dq-total">—</div>
           <div class="kpi-sub">Before cleaning</div>
         </div>
         <div class="kpi-card kpi-green">
-          <span class="kpi-icon">✅</span>
+
           <div class="kpi-label">Clean Records</div>
           <div class="kpi-value" id="dq-clean">—</div>
           <div class="kpi-sub">Loaded to database</div>
         </div>
         <div class="kpi-card" style="border-color:#1e2d4a">
-          <span class="kpi-icon" style="top:16px;right:16px;position:absolute;font-size:20px;opacity:0.3">⚠️</span>
+
           <div class="kpi-label">Excluded Records</div>
           <div class="kpi-value" style="color:var(--red)" id="dq-excluded">—</div>
           <div class="kpi-sub">Anomalies &amp; duplicates</div>
         </div>
         <div class="kpi-card kpi-amber">
-          <span class="kpi-icon">📈</span>
+
           <div class="kpi-label">Data Quality Score</div>
           <div class="kpi-value" id="dq-pct">—</div>
           <div class="kpi-sub">% records retained</div>
@@ -580,8 +574,7 @@
   </div><!-- /page-content -->
 </main>
 
-<!-- Toast container -->
-<div id="toast-container" class="toast-container"></div>
+
 
 <!-- Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
