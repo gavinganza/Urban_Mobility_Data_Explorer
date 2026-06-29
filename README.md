@@ -53,6 +53,12 @@ python etl/02_load_to_db.py
 
 **5. Start the app**
 ```bash
+<<<<<<< HEAD
 python backend/app.py
 ```
 Open [http://localhost:5000](http://localhost:5000).
+=======
+mysql -u root -p < database/schema.sql
+
+Team Task sheet link: https://docs.google.com/spreadsheets/d/1abVbT6YdxCkYFyABA0_KdDv-Qfuk_M2h8OfQ4FtPgKM/edit?gid=0#gid=0
+>>>>>>> Readme update
